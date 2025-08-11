@@ -14,7 +14,26 @@ fn cache_path(file: &str) -> PathBuf {
 
 #[derive(Serialize, Deserialize)]
 pub struct AppState {
-    editor: Option<String>,
+    editor: Option<Editor>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum Editor {
+    Neovide,
+    Neovim,
+    Vim,
+    VsCode,
+    Zed,
+}
+
+pub fn editor_command(editor: &Editor) -> &str {
+    match editor {
+        Editor::Neovide => "neovide",
+        Editor::Neovim => "nvim",
+        Editor::Vim => "vim",
+        Editor::VsCode => "code",
+        Editor::Zed => "zed",
+    }
 }
 
 pub fn load_state() -> AppState {
@@ -32,14 +51,14 @@ pub fn save_state(state: &AppState) -> Result<(), std::io::Error> {
     Ok(())
 }
 
-pub fn get_editor() -> Option<String> {
+pub fn get_editor() -> Option<Editor> {
     let state = load_state();
     state.editor
 }
 
-pub fn set_editor(editor: &str) -> Result<(), std::io::Error> {
+pub fn set_editor(editor: Editor) -> Result<(), std::io::Error> {
     let mut state = load_state();
-    state.editor = Some(editor.to_string());
+    state.editor = Some(editor);
     save_state(&state)?;
     Ok(())
 }

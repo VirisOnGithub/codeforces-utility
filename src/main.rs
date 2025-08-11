@@ -9,14 +9,35 @@ fn main() {
     }
     let command = &args[1];
     if command == "editor" {
-        if args.len() < 3 {
-            eprintln!("Usage: {} editor <editor_name>", args[0]);
-            return;
+        let editors = vec!["Neovide", "Neovim", "Vim", "VsCode", "Zed"];
+        let selection = dialoguer::Select::with_theme(&dialoguer::theme::ColorfulTheme::default())
+            .with_prompt("Choose your editor")
+            .default(0)
+            .items(&editors)
+            .interact()
+            .expect("Failed to select editor");
+        let new_editor = match selection {
+            0 => data::Editor::Neovide,
+            1 => data::Editor::Neovim,
+            2 => data::Editor::Vim,
+            3 => data::Editor::VsCode,
+            4 => data::Editor::Zed,
+            _ => {
+                eprintln!("Invalid selection");
+                return;
+            }
+        };
+        match data::set_editor(new_editor) {
+            Ok(_) => {
+                println!(
+                    "Editor set to: \x1b[32m\x1b[1m{}\x1b[0m",
+                    editors[selection]
+                );
+            }
+            Err(e) => {
+                eprintln!("Failed to set editor: {e}");
+            }
         }
-        let new_editor = &args[2];
-        data::set_editor(new_editor).unwrap_or_else(|err| {
-            eprintln!("Failed to set editor: {err}");
-        });
     } else {
         match command.as_str() {
             "run" => {
@@ -53,13 +74,13 @@ fn main() {
                     fs::File::create(&problem_name).expect("Failed to create file");
                     match data::get_editor() {
                         Some(editor) => {
-                            Command::new(&editor)
+                            Command::new(data::editor_command(&editor))
                                 .arg(&problem_name)
                                 .status()
                                 .expect("Failed to open editor");
                         }
                         None => {
-                            eprintln!("No editor set. Use 'cfcf editor <editor_name>' to set one.")
+                            eprintln!("No editor set. Use 'cfcf editor' to set one.")
                         }
                     }
                 }
