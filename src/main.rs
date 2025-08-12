@@ -22,6 +22,11 @@ fn main() {
             Some(curprob) => fun::run_problem(curprob.as_str()),
             None => eprintln!("No current problem file found. Please specify a problem URL."),
         },
+        "clear_cache" => {
+            if let Err(e) = data::clear_cache() {
+                eprintln!("Failed to clear cache: {e}");
+            }
+        }
         _ => {
             let re =
                 regex::Regex::new(r"^https://codeforces.com/problemset/problem/(\d+)/([A-F])$")

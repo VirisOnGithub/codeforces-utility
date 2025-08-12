@@ -159,3 +159,7 @@ pub fn set_favourite_language(language: Language) -> Result<(), std::io::Error> 
     save_state(&state)?;
     Ok(())
 }
+
+pub fn clear_cache() -> Result<(), std::io::Error> {
+    save_state(&APP_STATE_NONE)
+}
