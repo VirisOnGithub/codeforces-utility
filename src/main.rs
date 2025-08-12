@@ -27,6 +27,7 @@ fn main() {
                 eprintln!("Failed to clear cache: {e}");
             }
         }
+        "template" => fun::create_template(),
         _ => {
             let re =
                 regex::Regex::new(r"^https://codeforces.com/problemset/problem/(\d+)/([A-F])$")

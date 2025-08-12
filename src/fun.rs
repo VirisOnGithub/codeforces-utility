@@ -90,22 +90,7 @@ pub fn create_problem(problem_name: String) {
     let selected_language: Language;
 
     if languages.len() > 1 {
-        let languages_str = languages
-            .iter()
-            .map(|lang| lang.to_string())
-            .collect::<Vec<String>>();
-        let selection = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Choose your language")
-            .default(
-                languages
-                    .iter()
-                    .position(|l| l == &data::get_favourite_language().unwrap_or(languages[0]))
-                    .unwrap_or(0),
-            )
-            .items(&languages_str)
-            .interact()
-            .expect("Failed to select language");
-        selected_language = languages[selection];
+        selected_language = choose_language(languages.clone());
         if let Err(e) = data::set_current_language(selected_language) {
             eprintln!("Failed to set current language: {e}");
         }
@@ -114,6 +99,7 @@ pub fn create_problem(problem_name: String) {
     }
 
     create_problem_file(&problem_name, &selected_language);
+    ask_for_template(&problem_name, &selected_language);
     if let Some(editor) = data::get_editor() {
         Command::new(data::editor_command(&editor))
             .arg(get_filename(&problem_name, &selected_language))
@@ -122,6 +108,51 @@ pub fn create_problem(problem_name: String) {
     } else {
         eprintln!("No editor set. Use '{PROGRAM_NAME} editor' to set one.");
     }
+}
+
+fn ask_for_template(problem_name: &str, selected_language: &Language) {
+    let template_opt = data::load_template(selected_language);
+    if template_opt.is_ok() {
+        println!("Template for \x1b[32m\x1b[1m{selected_language}\x1b[0m found!");
+        Select::with_theme(&ColorfulTheme::default())
+                .with_prompt("Do you want to use a template for this problem?")
+                .default(0)
+                .items(&["Yes", "No"])
+                .interact()
+                .map(|selection| {
+                    if selection == 0 {
+                        if let Err(e) = data::apply_template(problem_name, selected_language) {
+                            eprintln!("Failed to apply template: {e}");
+                        } else {
+                            println!(
+                                "Template applied successfully for {selected_language} problem: \x1b[32m\x1b[1m{problem_name}\x1b[0m"
+                            );
+                        }
+                    } else {
+                        println!("Skipping template.");
+                    }
+                })
+                .expect("Failed to select template option")
+    }
+}
+
+pub fn choose_language(languages: Vec<Language>) -> Language {
+    let languages_str = languages
+        .iter()
+        .map(|lang| lang.to_string())
+        .collect::<Vec<String>>();
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Choose your language")
+        .default(
+            languages
+                .iter()
+                .position(|l| l == &data::get_favourite_language().unwrap_or(languages[0]))
+                .unwrap_or(0),
+        )
+        .items(&languages_str)
+        .interact()
+        .expect("Failed to select language");
+    languages[selection]
 }
 
 pub fn create_problem_file(problem_name: &str, language: &Language) {
@@ -154,7 +185,7 @@ fn create_problem_file_with_extension(problem_name: &str, extension: &str) {
     }
 }
 
-fn get_filename(problem_name: &str, language: &Language) -> String {
+pub fn get_filename(problem_name: &str, language: &Language) -> String {
     match language {
         Language::C => format!("{problem_name}.c"),
         Language::Cpp => format!("{problem_name}.cpp"),
@@ -224,4 +255,17 @@ pub fn run_problem(problem_name: &str) {
             "No current language set. This should not happen. Try to recreate the problem file."
         );
     }
+}
+
+pub(crate) fn create_template() {
+    let language = choose_language(Language::all_variants().to_vec());
+    let template_path = data::get_template_path(language);
+    if let Err(e) = data::create_template_dir() {
+        eprintln!("Failed to create template directory: {e}");
+        return;
+    }
+    Command::new(data::editor_command(&data::get_editor().unwrap()))
+        .arg(template_path)
+        .status()
+        .expect("Failed to open the template file in the editor");
 }

@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::PathBuf;
 
+use crate::fun::get_filename;
+
 const STATE_FILE: &str = "app_state.json";
 const APP_STATE_NONE: AppState = AppState {
     editor: None,
@@ -53,11 +55,11 @@ impl fmt::Display for Editor {
 
 #[derive(Serialize, Deserialize, Copy, Clone, AllVariants, PartialEq)]
 pub enum Language {
+    C,
+    Cpp,
+    Java,
     Pypy,
     Python,
-    Cpp,
-    C,
-    Java,
     Rust,
 }
 
@@ -72,6 +74,19 @@ impl fmt::Display for Language {
             Language::Rust => "Rust",
         };
         write!(f, "{name}")
+    }
+}
+
+impl Language {
+    pub fn name_utf8(&self) -> String {
+        match self {
+            Language::C => "c".to_string(),
+            Language::Cpp => "cpp".to_string(),
+            Language::Java => "java".to_string(),
+            Language::Pypy => "pypy".to_string(),
+            Language::Python => "python".to_string(),
+            Language::Rust => "rs".to_string(),
+        }
     }
 }
 
@@ -160,6 +175,39 @@ pub fn set_favourite_language(language: Language) -> Result<(), std::io::Error> 
     Ok(())
 }
 
+#[allow(dead_code)]
+pub fn save_template(template: &str, language: Language) -> Result<(), std::io::Error> {
+    create_template_dir()?;
+    let template_path = cache_path("templates").join(format!("template.{}", language.name_utf8()));
+    std::fs::write(template_path, template)?;
+    Ok(())
+}
+
+pub fn create_template_dir() -> Result<(), std::io::Error> {
+    std::fs::create_dir_all(cache_path("templates"))?;
+    Ok(())
+}
+
+pub fn get_template_path(language: Language) -> PathBuf {
+    cache_path("templates").join(format!("template.{}", language.name_utf8()))
+}
+
+pub fn load_template(language: &Language) -> Result<String, std::io::Error> {
+    let template_name = format!("template.{}", language.name_utf8());
+    let template_path = cache_path("templates").join(template_name);
+    std::fs::read_to_string(template_path)
+}
+
 pub fn clear_cache() -> Result<(), std::io::Error> {
     save_state(&APP_STATE_NONE)
+}
+
+pub(crate) fn apply_template(
+    problem_name: &str,
+    selected_language: &Language,
+) -> Result<(), std::io::Error> {
+    let template = load_template(selected_language)?;
+    let problem_path = std::env::current_dir()?.join(get_filename(problem_name, selected_language));
+    std::fs::write(problem_path, template)?;
+    Ok(())
 }
