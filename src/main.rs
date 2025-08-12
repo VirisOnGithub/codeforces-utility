@@ -1,6 +1,8 @@
-use std::{env, fs, process::Command};
+use std::env;
 mod data;
 mod fun;
+
+pub const PROGRAM_NAME: &str = "cfc";
 
 fn main() {
     let args = env::args().collect::<Vec<String>>();
@@ -9,46 +11,35 @@ fn main() {
         return;
     }
     let command = &args[1];
-    if command == "editor" {
-        fun::set_editor();
-    } else {
-        match command.as_str() {
-            "run" => {
-                let curprob = data::get_current_problem();
-                if let Some(curprob) = curprob {
-                    fun::run_problem(curprob.as_str());
-                } else {
-                    eprintln!("No current problem file found. Please specify a problem URL.")
-                }
-            }
-            _ => {
-                let re =
-                    regex::Regex::new(r"^https://codeforces.com/problemset/problem/(\d+)/([A-F])$")
-                        .expect("Failed to compile regex");
-                if let Some(caps) = re.captures(command) {
-                    let problem_id = &caps[1];
-                    let problem_type = &caps[2];
-                    let mut problem_name = format!("{problem_id}{problem_type}");
-                    data::set_current_problem(problem_name.clone())
-                        .expect("Failed to set current problem");
-                    problem_name.push_str(".py");
-                    fs::File::create(&problem_name).expect("Failed to create file");
-                    match data::get_editor() {
-                        Some(editor) => {
-                            Command::new(data::editor_command(&editor))
-                                .arg(&problem_name)
-                                .status()
-                                .expect("Failed to open editor");
-                        }
-                        None => {
-                            eprintln!("No editor set. Use 'cfcf editor' to set one.")
-                        }
-                    }
-                } else {
-                    eprintln!(
-                        "Invalid command. Use 'cfcf editor' to set an editor or 'cfcf run' to run the current problem."
-                    );
-                }
+    match command.as_str() {
+        "editor" => {
+            fun::set_editor();
+        }
+        "lang" => {
+            fun::set_languages();
+        }
+        "run" => match data::get_current_problem() {
+            Some(curprob) => fun::run_problem(curprob.as_str()),
+            None => eprintln!("No current problem file found. Please specify a problem URL."),
+        },
+        _ => {
+            let re =
+                regex::Regex::new(r"^https://codeforces.com/problemset/problem/(\d+)/([A-F])$")
+                    .expect("Failed to compile regex");
+            if let Some(caps) = re.captures(command) {
+                let problem_id = &caps[1];
+                let problem_type = &caps[2];
+                let problem_name = format!("{problem_id}{problem_type}");
+                fun::create_problem(problem_name);
+            } else {
+                eprintln!(
+                    "Invalid command.\n\
+                    Usage:\n\
+                    \t'{PROGRAM_NAME} editor' to set an editor\n\
+                    \t'{PROGRAM_NAME} lang' to set languages\n\
+                    \t'{PROGRAM_NAME} run' to run the current problem\n\
+                    \tOr provide a valid Codeforces problem URL."
+                );
             }
         }
     }

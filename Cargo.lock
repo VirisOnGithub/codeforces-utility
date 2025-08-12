@@ -22,6 +22,7 @@ name = "cfc"
 version = "0.1.0"
 dependencies = [
  "dialoguer",
+ "enum_all_variants",
  "regex",
  "serde",
  "serde_json",
@@ -64,6 +65,16 @@ name = "encode_unicode"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34aa73646ffb006b8f5147f3dc182bd4bcb190227ce861fc4a4844bf8e3cb2c0"
+
+[[package]]
+name = "enum_all_variants"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b46184566a86c295c49e0da901abdcc0beea38325c7f4184e3b3672cd44a5f31"
+dependencies = [
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "errno"

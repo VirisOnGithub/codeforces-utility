@@ -1,12 +1,15 @@
-use std::path::PathBuf;
-
+use enum_all_variants::AllVariants;
 use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::path::PathBuf;
 
 const STATE_FILE: &str = "app_state.json";
 const APP_STATE_NONE: AppState = AppState {
     editor: None,
-    language: None,
+    languages: None,
     current_problem: None,
+    current_language: None,
+    favourite_language: None,
 };
 
 fn cache_path(file: &str) -> PathBuf {
@@ -20,11 +23,13 @@ fn cache_path(file: &str) -> PathBuf {
 #[derive(Serialize, Deserialize)]
 pub struct AppState {
     editor: Option<Editor>,
-    language: Option<Language>,
+    languages: Option<Vec<Language>>,
     current_problem: Option<String>,
+    current_language: Option<Language>,
+    favourite_language: Option<Language>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, AllVariants, Copy, Clone)]
 pub enum Editor {
     Neovide,
     Neovim,
@@ -33,7 +38,20 @@ pub enum Editor {
     Zed,
 }
 
-#[derive(Serialize, Deserialize)]
+impl fmt::Display for Editor {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let name = match self {
+            Editor::Neovide => "Neovide",
+            Editor::Neovim => "Neovim",
+            Editor::Vim => "Vim",
+            Editor::VsCode => "VsCode",
+            Editor::Zed => "Zed",
+        };
+        write!(f, "{name}")
+    }
+}
+
+#[derive(Serialize, Deserialize, Copy, Clone, AllVariants, PartialEq)]
 pub enum Language {
     Pypy,
     Python,
@@ -41,6 +59,20 @@ pub enum Language {
     C,
     Java,
     Rust,
+}
+
+impl fmt::Display for Language {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let name = match self {
+            Language::C => "C",
+            Language::Cpp => "C++",
+            Language::Java => "Java",
+            Language::Pypy => "Python (PyPy)",
+            Language::Python => "Python",
+            Language::Rust => "Rust",
+        };
+        write!(f, "{name}")
+    }
 }
 
 pub fn editor_command(editor: &Editor) -> &str {
@@ -80,14 +112,14 @@ pub fn set_editor(editor: Editor) -> Result<(), std::io::Error> {
     Ok(())
 }
 
-pub fn get_language() -> Option<Language> {
+pub fn get_languages() -> Option<Vec<Language>> {
     let state = load_state();
-    state.language
+    state.languages
 }
 
-pub fn set_language(language: Language) -> Result<(), std::io::Error> {
+pub fn set_languages(languages: Vec<Language>) -> Result<(), std::io::Error> {
     let mut state = load_state();
-    state.language = Some(language);
+    state.languages = Some(languages);
     save_state(&state)?;
     Ok(())
 }
@@ -100,6 +132,30 @@ pub fn get_current_problem() -> Option<String> {
 pub fn set_current_problem(problem: String) -> Result<(), std::io::Error> {
     let mut state = load_state();
     state.current_problem = Some(problem);
+    save_state(&state)?;
+    Ok(())
+}
+
+pub fn get_current_language() -> Option<Language> {
+    let state = load_state();
+    state.current_language
+}
+
+pub fn set_current_language(language: Language) -> Result<(), std::io::Error> {
+    let mut state = load_state();
+    state.current_language = Some(language);
+    save_state(&state)?;
+    Ok(())
+}
+
+pub fn get_favourite_language() -> Option<Language> {
+    let state = load_state();
+    state.favourite_language
+}
+
+pub fn set_favourite_language(language: Language) -> Result<(), std::io::Error> {
+    let mut state = load_state();
+    state.favourite_language = Some(language);
     save_state(&state)?;
     Ok(())
 }
