@@ -141,6 +141,10 @@ pub fn create_problem_file(problem_name: &String, language: &Language) {
 
 fn create_problem_file_with_extension(problem_name: &str, extension: &str) {
     let file_name = format!("{problem_name}.{extension}");
+    if fs::metadata(&file_name).is_ok() {
+        eprintln!("File '{file_name}' already exists. Skipping creation.");
+        return;
+    }
     if fs::File::create(&file_name).is_ok() {
         println!("Problem file created: \x1b[32m\x1b[1m{file_name}\x1b[0m");
     } else {
