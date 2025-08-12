@@ -124,7 +124,7 @@ pub fn create_problem(problem_name: String) {
     }
 }
 
-pub fn create_problem_file(problem_name: &String, language: &Language) {
+pub fn create_problem_file(problem_name: &str, language: &Language) {
     match language {
         Language::Pypy | Language::Python => create_problem_file_with_extension(problem_name, "py"),
         Language::C | Language::Cpp => create_problem_file_with_extension(problem_name, "cpp"),
@@ -132,7 +132,9 @@ pub fn create_problem_file(problem_name: &String, language: &Language) {
         Language::Rust => {
             Command::new("cargo")
                 .arg("new")
-                .arg(problem_name)
+                .arg(format!("r{}", problem_name.to_lowercase()))
+                .arg("--vcs")
+                .arg("none")
                 .status()
                 .expect("Failed to create Rust project");
         }
@@ -159,7 +161,7 @@ fn get_filename(problem_name: &str, language: &Language) -> String {
         Language::Java => format!("{problem_name}.java"),
         Language::Pypy | Language::Python => format!("{problem_name}.py"),
         Language::Rust => {
-            format!("{problem_name}/src/main.rs")
+            format!("r{}/src/main.rs", problem_name.to_lowercase())
         }
     }
 }
@@ -212,7 +214,7 @@ pub fn run_problem(problem_name: &str) {
             Language::Rust => {
                 Command::new("cargo")
                     .arg("run")
-                    .current_dir(problem_name)
+                    .current_dir(format!("r{}", problem_name.to_lowercase()))
                     .status()
                     .expect("Failed to run the Rust project");
             }
